@@ -40,14 +40,22 @@ def load_votes():
             # Initialize sheet if empty
             return {"options": {}, "voters": [], "total_votes": 0}
         
-        # Parse the data (expecting: Option, Count in columns A-B, and voters in column D)
+        # Parse the data
+        # Row format: Column A = Option name, Column B = Vote count, Column D = Voters (comma-separated)
         votes_data = {"options": {}, "voters": [], "total_votes": 0}
         
-        for row in all_values[1:]:  # Skip header
-            if len(row) >= 2 and row[0]:
-                votes_data["options"][row[0]] = int(row[1]) if row[1].isdigit() else 0
-            if len(row) >= 4 and row[3]:  # Voters in column D
-                votes_data["voters"] = row[3].split(',') if row[3] else []
+        # Read options from rows 2-5 (indices 1-4)
+        for i in range(1, min(len(all_values), 6)):  # Rows 2-6
+            row = all_values[i]
+            if len(row) >= 2 and row[0]:  # Column D (index 3)
+                option_name = row[0]
+                vote_count = int(row[1]) if row[1] and row[1].isdigit() else 0
+                votes_data["options"][option_name] = vote_count
+        
+        # Read voters from column D, row 2 (all voters in one cell, comma-separated)
+        if len(all_values) > 1 and len(all_values[1]) > 3 and all_values[1][3]:
+            voters_str = all_values[1][3]
+            votes_data["voters"] = [v.strip() for v in voters_str.split(',') if v.strip()]
         
         votes_data["total_votes"] = len(votes_data["voters"])
         return votes_data
@@ -62,17 +70,21 @@ def save_votes(votes_data):
         if sheet is None:
             return False
         
-        # Clear existing data
+        # Clear all data
         sheet.clear()
         
-        # Prepare data for sheet
-        headers = ['Option', 'Votes', '', 'Voters']
-        sheet.append_row(headers)
+        # Row 1: Headers
+        sheet.update('A1:D1', [['Option', 'Votes', '', 'Voters']])
         
-        # Add vote counts
-        for option, count in votes_data["options"].items():
-            voters_str = ','.join(votes_data["voters"]) if votes_data["voters"] else ''
-            sheet.append_row([option, count, '', voters_str if option == list(votes_data["options"].keys())[0] else ''])
+        # Rows 2-5: Options and vote counts
+        options_list = list(votes_data["options"].items())
+        for i, (option, count) in enumerate(options_list, start=2):
+            # Put voters list only in the first row (D2)
+            if i == 2:
+                voters_str = ','.join(votes_data["voters"]) if votes_data["voters"] else ''
+                sheet.update(f'A{i}:D{i}', [[option, count, '', voters_str]])
+            else:
+                sheet.update(f'A{i}:B{i}', [[option, count]])
         
         return True
     except Exception as e:
