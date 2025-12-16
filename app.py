@@ -90,6 +90,8 @@ def initialize_voting_options():
             "Option C": 0,
             "Option D": 0
         }
+        votes_data["voters"] = []
+        votes_data["total_votes"] = 0
         save_votes(votes_data)
     return votes_data
 
@@ -214,7 +216,12 @@ def main():
                     # Check if already voted
                     if voter_id not in votes_data["voters"]:
                         # Record vote
-                        votes_data["options"][choice] += 1
+                        if choice in votes_data["options"]:
+                            votes_data["options"][choice] += 1
+                        else:
+                            # Initialize option if not exists
+                            votes_data["options"][choice] = 1
+                        
                         votes_data["voters"].append(voter_id)
                         votes_data["total_votes"] = len(votes_data["voters"])
                         
