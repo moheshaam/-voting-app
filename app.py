@@ -219,7 +219,11 @@ def main():
                 else:
                     # Generate voter ID
                     if not voter_id:
-                        voter_id = f"{datetime.now().timestamp()}_{hash(voter_name) if voter_name else 'anonymous'}"
+                        # Use name if provided, otherwise generate anonymous ID
+                        if voter_name and voter_name.strip():
+                            voter_id = voter_name.strip()
+                        else:
+                            voter_id = f"Anonymous_{int(datetime.now().timestamp())}"
                         st.session_state.voter_id = voter_id
                     
                     # Reload votes to get latest data
