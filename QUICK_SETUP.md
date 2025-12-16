@@ -1,39 +1,60 @@
-# 🚀 Quick Setup Guide
+# Quick Setup Guide
 
-## للي عايز ياخد البروجكت ويشغله:
+## للي عايز ياخد البروجكت ويشغله
 
-### الخطوات السريعة:
+### الخطوات السريعة
 
-#### 1️⃣ Fork الـ Repository
-اضغط **Fork** فوق على GitHub
+#### 1. Fork الـ Repository
+اضغط Fork فوق على GitHub
 
-#### 2️⃣ إعداد Google Cloud (5 دقائق)
+#### 2. إعداد Google Cloud (5 دقائق)
 
-1. **Google Cloud Console**: https://console.cloud.google.com
-   - اعمل مشروع جديد
+**Google Cloud Console:**
+https://console.cloud.google.com
+
+الخطوات:
+- اعمل مشروع جديد (New Project)
    
-2. **فعّل APIs**:
-   - Google Sheets API
-   - Google Drive API
+**فعّل APIs:**
+- روح على: APIs & Services > Library
+- ابحث عن: Google Sheets API واضغط Enable
+- ابحث عن: Google Drive API واضغط Enable
    
-3. **اعمل Service Account**:
-   - APIs & Services → Credentials
-   - Create Credentials → Service Account
-   - Role: Editor
-   - Create Key → JSON
-   - حمّل الملف
+**اعمل Service Account:**
+- روح على: APIs & Services > Credentials
+- اضغط: Create Credentials > Service Account
+- اكتب اسم للـ Service Account مثل: voting-app
+- اختار Role: Editor
+- اضغط Done
 
-4. **اعمل Google Sheet**:
-   - اسمه: `Voting_App_Data`
-   - الصف الأول: `Option | Votes | | Voters`
-   - شارك الشيت مع الـ `client_email` من الـ JSON
+**حمّل JSON Key:**
+- في صفحة Credentials، اضغط على الـ Service Account اللي عملته
+- روح لـ Keys tab
+- اضغط: Add Key > Create new key
+- اختار: JSON
+- الملف هيتحمل تلقائياً - احتفظ بيه في مكان آمن
 
-#### 3️⃣ نشر على Streamlit Cloud
+**اعمل Google Sheet:**
+- افتح: https://sheets.google.com
+- اعمل شيت جديد اسمه: Voting_App_Data
+- في الصف الأول اكتب: Option | Votes | | Voters
+- اضغط Share (مشاركة)
+- الصق الـ client_email من ملف الـ JSON
+- اديله صلاحية Editor
+- اضغط Send
 
-1. https://share.streamlit.io
-2. New app → اختار الـ repo
-3. Advanced settings → Secrets:
-   - انسخ محتوى الـ JSON بصيغة TOML:
+#### 3. نشر على Streamlit Cloud
+
+**رابط Streamlit Cloud:**
+https://share.streamlit.io
+
+الخطوات:
+- سجل دخول بحساب GitHub
+- اضغط New app
+- اختار الـ repository بتاعك
+- Main file: app.py
+- اضغط Advanced settings
+- في Secrets، الصق محتوى الـ JSON بصيغة TOML:
 
 ```toml
 [gcp_service_account]
@@ -50,13 +71,13 @@ client_x509_cert_url = "من الـ JSON"
 universe_domain = "googleapis.com"
 ```
 
-4. Deploy!
+- اضغط Deploy
 
 ---
 
 ## تخصيص الخيارات
 
-في `app.py`، سطر 66-71، غيّر:
+في app.py، سطر 66-71، غيّر:
 
 ```python
 votes_data["options"] = {
@@ -70,10 +91,16 @@ votes_data["options"] = {
 
 ## مشاكل شائعة
 
-**Error 403**: فعّل Google Drive API
-**No votes showing**: شارك الشيت مع الـ service account email
-**Secrets error**: تأكد من صيغة الـ TOML صح
+**Error 403:**
+فعّل Google Drive API من:
+https://console.cloud.google.com/apis/library/drive.googleapis.com
+
+**No votes showing:**
+شارك الشيت مع الـ service account email من ملف الـ JSON
+
+**Secrets error:**
+تأكد من صيغة الـ TOML صح والـ private_key على سطر واحد مع \\n
 
 ---
 
-🎉 **جاهز!**
+جاهز!
