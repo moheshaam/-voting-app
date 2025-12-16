@@ -115,186 +115,55 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for modern UI
+# Custom CSS for mobile optimization
 st.markdown("""
     <style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-    
-    /* Global Styles */
-    html, body, [class*="css"] {
-        font-family: 'Poppins', sans-serif;
-    }
-    
-    /* Dark mode background with gradient */
-    .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        background-attachment: fixed;
-    }
-    
-    /* Main container styling */
-    .main .block-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 25px;
-        padding: 2rem;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        backdrop-filter: blur(10px);
-    }
-    
-    /* Title styling with gradient */
-    h1 {
-        text-align: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
-        font-size: 3rem !important;
-        margin-bottom: 2rem;
-    }
-    
-    h2, h3 {
-        color: #667eea;
-        font-weight: 600;
-    }
-    
-    /* Modern Button Styles */
+    /* Mobile-friendly styles */
     .stButton > button {
         width: 100%;
         height: 60px;
         font-size: 18px;
-        font-weight: 600;
         margin: 10px 0;
-        border-radius: 15px;
-        border: none;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        transition: all 0.3s ease;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.6);
-    }
-    
-    /* Radio buttons styling */
-    .stRadio > div {
-        font-size: 18px;
-        gap: 15px;
-    }
-    
-    .stRadio > div > label {
-        padding: 20px;
-        margin: 10px 0;
-        border: 3px solid #e0e7ff;
-        border-radius: 15px;
-        display: block;
-        cursor: pointer;
-        background: linear-gradient(135deg, #f5f7ff 0%, #ffffff 100%);
-        transition: all 0.3s ease;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
-    
-    .stRadio > div > label:hover {
-        border-color: #667eea;
-        background: linear-gradient(135deg, #e0e7ff 0%, #f5f7ff 100%);
-        transform: translateX(5px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
-    }
-    
-    /* Input fields */
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input {
-        border-radius: 12px;
-        border: 2px solid #e0e7ff;
-        padding: 12px;
-        font-size: 16px;
-        transition: all 0.3s ease;
-    }
-    
-    .stTextInput > div > div > input:focus,
-    .stNumberInput > div > div > input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    
-    /* Progress bar styling */
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         border-radius: 10px;
     }
     
-    /* Info boxes with modern cards */
-    .stAlert {
-        border-radius: 15px;
-        border: none;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    /* Winner badge */
-    .winner-badge {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 20px;
-        text-align: center;
-        font-size: 24px;
-        font-weight: 700;
-        box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
-        margin: 20px 0;
-    }
-    
-    /* Live counter badge */
-    .live-counter {
-        display: inline-block;
-        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        color: white;
-        padding: 8px 20px;
-        border-radius: 25px;
-        font-weight: 600;
+    .stRadio > div {
         font-size: 18px;
-        box-shadow: 0 5px 15px rgba(67, 233, 123, 0.4);
-        animation: pulse 2s infinite;
     }
     
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
+    .stRadio > div > label {
+        padding: 15px;
+        margin: 10px 0;
+        border: 2px solid #f0f2f6;
+        border-radius: 10px;
+        display: block;
+        cursor: pointer;
+        transition: all 0.3s;
     }
     
-    /* Results card */
-    .result-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f5f7ff 100%);
-        padding: 25px;
-        border-radius: 20px;
-        margin: 15px 0;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        border-left: 5px solid #667eea;
+    .stRadio > div > label:hover {
+        border-color: #ff4b4b;
+        background-color: #f0f2f6;
     }
     
-    /* Touch-friendly spacing for mobile */
+    h1 {
+        text-align: center;
+        color: #ff4b4b;
+    }
+    
+    .vote-card {
+        background-color: #f0f2f6;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+    
+    /* Touch-friendly spacing */
     @media (max-width: 768px) {
         .stButton > button {
             height: 70px;
             font-size: 20px;
         }
-        
-        h1 {
-            font-size: 2rem !important;
-        }
-        
-        .main .block-container {
-            padding: 1rem;
-        }
-    }
-    
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    [data-testid="stSidebar"] * {
-        color: white !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -386,85 +255,21 @@ def main():
             show_results(votes_data)
 
 def show_results(votes_data):
-    """Display voting results with charts"""
+    """Display voting results"""
     st.markdown("### 📊 Current Results")
     
     total_votes = votes_data["total_votes"]
-    
-    # Live counter badge
-    st.markdown(f'<div class="live-counter">🔴 Live: {total_votes} Total Votes</div>', unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.info(f"Total Votes: {total_votes}")
     
     if total_votes > 0:
-        # Find winner
-        max_votes = max(votes_data["options"].values())
-        winners = [opt for opt, count in votes_data["options"].items() if count == max_votes]
-        
-        # Show winner badge
-        if len(winners) == 1:
-            st.markdown(f'<div class="winner-badge">🏆 Current Leader: {winners[0]}</div>', unsafe_allow_html=True)
-        elif len(winners) > 1:
-            st.markdown(f'<div class="winner-badge">🤝 Tied: {", ".join(winners)}</div>', unsafe_allow_html=True)
-        
-        # Create columns for better layout
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            # Bar chart style results
-            for option, count in votes_data["options"].items():
-                percentage = (count / total_votes * 100) if total_votes > 0 else 0
-                
-                # Result card with emoji based on rank
-                if count == max_votes and count > 0:
-                    emoji = "🥇"
-                elif count > 0:
-                    emoji = "📊"
-                else:
-                    emoji = "📭"
-                
-                st.markdown(f"""
-                    <div class="result-card">
-                        <h3 style="margin: 0 0 10px 0;">{emoji} {option}</h3>
-                        <p style="font-size: 24px; font-weight: 700; margin: 5px 0; color: #667eea;">
-                            {count} votes ({percentage:.1f}%)
-                        </p>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                st.progress(percentage / 100)
-                st.markdown("")
-        
-        with col2:
-            # Pie chart
-            import plotly.graph_objects as go
-            
-            # Filter out zero votes for cleaner chart
-            chart_data = {k: v for k, v in votes_data["options"].items() if v > 0}
-            
-            if chart_data:
-                colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#43e97b', '#38f9d7']
-                
-                fig = go.Figure(data=[go.Pie(
-                    labels=list(chart_data.keys()),
-                    values=list(chart_data.values()),
-                    hole=0.4,
-                    marker=dict(colors=colors[:len(chart_data)]),
-                    textinfo='label+percent',
-                    textfont=dict(size=14, family='Poppins', color='white'),
-                    hoverinfo='label+value+percent'
-                )])
-                
-                fig.update_layout(
-                    showlegend=False,
-                    height=300,
-                    margin=dict(l=0, r=0, t=0, b=0),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)'
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
+        for option, count in votes_data["options"].items():
+            percentage = (count / total_votes * 100) if total_votes > 0 else 0
+            st.markdown(f"**{option}**")
+            st.progress(percentage / 100)
+            st.markdown(f"{count} votes ({percentage:.1f}%)")
+            st.markdown("")
     else:
-        st.warning("📭 No votes recorded yet.")
+        st.warning("No votes recorded yet.")
     
     # Refresh button
     if st.button("🔄 Refresh Results", use_container_width=True):
