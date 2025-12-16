@@ -2,8 +2,8 @@
 
 ## خطوات سهلة لتشغيل ال app
 
-#### 1. Fork الـ Repository
-اضغط Fork فوق على GitHub
+
+1####- اضغط Fork فوق على GitHub
 
 #### 2. إعداد Google Cloud (5 دقائق)
 
