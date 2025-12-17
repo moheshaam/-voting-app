@@ -192,6 +192,8 @@ def main():
         st.session_state.current_question = 1
     if 'last_saved_question' not in st.session_state:
         st.session_state.last_saved_question = 0
+    if 'widget_key' not in st.session_state:
+        st.session_state.widget_key = 0
     
     # Load voting data only once at the beginning
     if 'votes_loaded' not in st.session_state:
@@ -230,22 +232,13 @@ def main():
             "(4) يونس عبد الرازق"
         ]
         
-        # Radio buttons for voting - immediate voting on selection
+        # Radio buttons for voting - use widget_key for unique keys
         choice = st.radio(
             "اختر رقم:",
             options,
             index=None,
             label_visibility="collapsed",
-            key=f"vote_radio_{question_num}"
-        )
-        
-        # Radio buttons for voting - immediate voting on selection
-        choice = st.radio(
-            "اختر رقم:",
-            options,
-            index=None,
-            label_visibility="collapsed",
-            key=f"vote_radio_{question_num}"
+            key=f"vote_radio_{st.session_state.widget_key}"
         )
         
         # Immediate voting when choice is made
@@ -275,6 +268,7 @@ def main():
                     # Button to go to next question
                     if st.button("➡️ السؤال التالي", use_container_width=True, type="primary"):
                         st.session_state.current_question = question_num + 1
+                        st.session_state.widget_key += 1  # Increment widget key for unique radio button
                         st.rerun()
                 else:
                     st.error("❌ حدث خطأ في حفظ الإجابة، حاول مرة أخرى")
@@ -283,6 +277,7 @@ def main():
                 st.info(f"تم حفظ إجابتك: {choice}")
                 if st.button("➡️ السؤال التالي", use_container_width=True, type="primary"):
                     st.session_state.current_question = question_num + 1
+                    st.session_state.widget_key += 1  # Increment widget key for unique radio button
                     st.rerun()
         
         # Show personal results
