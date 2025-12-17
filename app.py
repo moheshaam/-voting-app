@@ -78,6 +78,36 @@ def get_voter_question_count(votes_data, voter_name):
     count = sum(1 for vote in votes_data["votes"] if vote["voter"] == voter_name)
     return count
 
+def on_vote_change():
+    """Callback function when vote selection changes"""
+    # Get the selected choice from session state
+    choice_key = f"vote_radio_{st.session_state.widget_key}"
+    if choice_key in st.session_state and st.session_state[choice_key] is not None:
+        choice = st.session_state[choice_key]
+        question_num = st.session_state.current_question
+        
+        # Check if this vote was already recorded
+        if st.session_state.last_saved_question != question_num:
+            # Load votes
+            votes_data = load_votes()
+            
+            # Add vote to the list
+            vote_entry = {
+                "voter": st.session_state.voter_name,
+                "question": question_num,
+                "choice": choice,
+                "timestamp": datetime.now().isoformat()
+            }
+            votes_data["votes"].append(vote_entry)
+            
+            # Save votes
+            save_votes(votes_data)
+            
+            # Mark as saved and move to next question
+            st.session_state.last_saved_question = question_num
+            st.session_state.current_question = question_num + 1
+            st.session_state.widget_key += 1
+
 def show_personal_results(votes_data, voter_name):
     """Display personal voting results for a specific voter"""
     st.markdown("## 📋 نتائجك الشخصية")
@@ -232,53 +262,24 @@ def main():
             "(4) يونس عبد الرازق"
         ]
         
-        # Radio buttons for voting - use widget_key for unique keys
+        # Radio buttons with callback for automatic voting
         choice = st.radio(
             "اختر رقم:",
             options,
             index=None,
             label_visibility="collapsed",
-            key=f"vote_radio_{st.session_state.widget_key}"
+            key=f"vote_radio_{st.session_state.widget_key}",
+            on_change=on_vote_change
         )
         
-        # Immediate voting when choice is made
-        if choice is not None:
-            # Check if this vote was already recorded (to prevent duplicate on rerun)
-            if st.session_state.last_saved_question != question_num:
-                # Record vote immediately
-                votes_data = load_votes()
-                
-                # Add vote to the list
-                vote_entry = {
-                    "voter": st.session_state.voter_name,
-                    "question": question_num,
-                    "choice": choice,
-                    "timestamp": datetime.now().isoformat()
-                }
-                votes_data["votes"].append(vote_entry)
-                
-                # Save votes
-                if save_votes(votes_data):
-                    # Mark this question as saved
-                    st.session_state.last_saved_question = question_num
-                    
-                    # Show success message
-                    st.success(f"✅ تم تسجيل إجابتك للسؤال {question_num}: {choice}")
-                    
-                    # Button to go to next question
-                    if st.button("➡️ السؤال التالي", use_container_width=True, type="primary"):
-                        st.session_state.current_question = question_num + 1
-                        st.session_state.widget_key += 1  # Increment widget key for unique radio button
-                        st.rerun()
-                else:
-                    st.error("❌ حدث خطأ في حفظ الإجابة، حاول مرة أخرى")
-            else:
-                # Already saved, show button to continue
-                st.info(f"تم حفظ إجابتك: {choice}")
-                if st.button("➡️ السؤال التالي", use_container_width=True, type="primary"):
-                    st.session_state.current_question = question_num + 1
-                    st.session_state.widget_key += 1  # Increment widget key for unique radio button
-                    st.rerun()
+        # Show success message if vote was just saved
+        if st.session_state.last_saved_question == question_num - 1:
+            # Get the last vote for this user
+            votes_data = load_votes()
+            user_votes = [v for v in votes_data["votes"] if v["voter"] == st.session_state.voter_name]
+            if user_votes:
+                last_vote = user_votes[-1]
+                st.success(f"✅ تم تسجيل إجابتك للسؤال {last_vote['question']}: {last_vote['choice']}")
         
         # Show personal results
         st.markdown("---")
