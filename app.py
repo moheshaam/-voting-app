@@ -84,19 +84,34 @@ def show_personal_results(votes_data, voter_name):
         st.info("لم تقم بالتصويت بعد")
         return
     
-    st.info(f"عدد الأسئلة التي أجبت عليها: {len(personal_votes)}")
+    st.info(f"إجمالي الأسئلة: {len(personal_votes)} سؤال")
     
-    # Sort by question number
-    personal_votes.sort(key=lambda x: x["question"])
-    
-    # Display in a table format
-    st.markdown("---")
+    # Count votes per choice
+    choice_counts = {}
     for vote in personal_votes:
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            st.markdown(f"**السؤال {vote['question']}**")
-        with col2:
-            st.markdown(f"✅ **{vote['choice']}**")
+        choice = vote["choice"]
+        choice_counts[choice] = choice_counts.get(choice, 0) + 1
+    
+    # Display summary
+    st.markdown("### ملخص اختياراتك:")
+    st.markdown("---")
+    
+    # Define all options
+    all_options = [
+        "(1) أحمد جعفر",
+        "(1) عزت عبدالرحمن",
+        "(3) أحمد رجب الشافعي",
+        "(4) يونس عبد الرازق"
+    ]
+    
+    for option in all_options:
+        count = choice_counts.get(option, 0)
+        if count > 0:
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown(f"**{option}**")
+            with col2:
+                st.markdown(f"🗳️ **{count} مرة**")
     
     st.markdown("---")
 
@@ -196,7 +211,12 @@ def main():
         st.markdown("### اختر إجابتك:")
         
         # Get voting options
-        options = ["رقم 1", "رقم 2", "رقم 3", "رقم 4", "غير صحيح"]
+        options = [
+            "(1) أحمد جعفر",
+            "(1) عزت عبدالرحمن",
+            "(3) أحمد رجب الشافعي",
+            "(4) يونس عبد الرازق"
+        ]
         
         # Radio buttons for voting - immediate voting on selection
         choice = st.radio(
@@ -256,7 +276,12 @@ def show_all_results(votes_data):
         st.info(f"إجمالي الأصوات: {total_votes}")
         
         # Group by choice
-        options = ["رقم 1", "رقم 2", "رقم 3", "رقم 4", "غير صحيح"]
+        options = [
+            "(1) أحمد جعفر",
+            "(1) عزت عبدالرحمن",
+            "(3) أحمد رجب الشافعي",
+            "(4) يونس عبد الرازق"
+        ]
         
         for option in options:
             option_votes = [v for v in question_votes if v["choice"] == option]
