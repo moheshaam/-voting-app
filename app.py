@@ -36,17 +36,22 @@ def load_votes():
         # Get all values
         all_values = sheet.get_all_values()
         
-        if len(all_values) < 1 or not all_values[0][0]:
+        if not all_values or len(all_values) == 0:
+            return {"votes": []}
+        
+        if len(all_values[0]) == 0 or not all_values[0][0]:
             return {"votes": []}
         
         # Try to parse JSON from cell A1
         try:
             votes_data = json.loads(all_values[0][0])
+            if "votes" not in votes_data:
+                return {"votes": []}
             return votes_data
         except:
             return {"votes": []}
     except Exception as e:
-        st.error(f"Error loading votes: {e}")
+        # Don't show error to user, just return empty data
         return {"votes": []}
 
 def save_votes(votes_data):
@@ -99,7 +104,7 @@ def show_personal_results(votes_data, voter_name):
     # Define all options
     all_options = [
         "(1) أحمد جعفر",
-        "(1) عزت عبدالرحمن",
+        "(2) عزت عبدالرحمن",
         "(3) أحمد رجب الشافعي",
         "(4) يونس عبد الرازق"
     ]
@@ -213,7 +218,7 @@ def main():
         # Get voting options
         options = [
             "(1) أحمد جعفر",
-            "(1) عزت عبدالرحمن",
+            "(2) عزت عبدالرحمن",
             "(3) أحمد رجب الشافعي",
             "(4) يونس عبد الرازق"
         ]
@@ -278,7 +283,7 @@ def show_all_results(votes_data):
         # Group by choice
         options = [
             "(1) أحمد جعفر",
-            "(1) عزت عبدالرحمن",
+            "(2) عزت عبدالرحمن",
             "(3) أحمد رجب الشافعي",
             "(4) يونس عبد الرازق"
         ]
