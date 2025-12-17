@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - النتائج الكاملة</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .question-block {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-right: 5px solid #667eea;
+        }
+        .question-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .result-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+        .choice-name {
+            flex: 1;
+            font-size: 1.1em;
+        }
+        .count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .reset-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 لوحة التحكم - جميع النتائج</h1>
+        
+        {% if votes_by_q %}
+            {% for q_num in votes_by_q.keys()|sort %}
+            <div class="question-block">
+                <div class="question-title">السؤال رقم {{ q_num }}</div>
+                {% for choice, count in votes_by_q[q_num].items()|sort(attribute='1', reverse=True) %}
+                <div class="result-item">
+                    <div class="choice-name">{{ choice }}</div>
+                    <div class="count">{{ count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="question-block">
+                <div class="choice-name">لا توجد أصوات بعد</div>
+            </div>
+        {% endif %}
+        
+        <form method="POST" action="/reset_votes" onsubmit="return confirm('هل أنت متأكد من حذف جميع الأصوات؟')">
+            <input type="hidden" name="password" value="admin123">
+            <button type="submit" class="reset-btn">🗑️ حذف جميع الأصوات</button>
+        </form>
+    </div>
+</body>
+</html>

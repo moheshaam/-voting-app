@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نتائجي</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .total {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        .question-block {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-right: 5px solid #667eea;
+        }
+        .question-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .answer {
+            color: #28a745;
+            font-size: 1.05em;
+            padding-right: 20px;
+        }
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        button, a {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s;
+            display: block;
+        }
+        .back-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 نتائج {{ voter_name }}</h1>
+        <div class="total">إجمالي الأصوات: {{ total_votes }}</div>
+        
+        {% if votes_by_q %}
+            {% for q_num in votes_by_q.keys()|sort %}
+            <div class="question-block">
+                <div class="question-title">السؤال رقم {{ q_num }}</div>
+                {% for choice in votes_by_q[q_num] %}
+                <div class="answer">✓ {{ choice }}</div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="question-block">
+                <div class="answer">لم تقم بالتصويت بعد</div>
+            </div>
+        {% endif %}
+        
+        <div class="buttons">
+            <a href="/vote" class="back-btn">🗳️ العودة للتصويت</a>
+            <a href="/logout" class="logout-btn">🚪 خروج</a>
+        </div>
+    </div>
+</body>
+</html>

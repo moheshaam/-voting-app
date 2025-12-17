@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التصويت - سؤال {{ current_question }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .stat {
+            background: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.2em;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .option {
+            position: relative;
+        }
+        input[type="radio"] {
+            display: none;
+        }
+        label {
+            display: block;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.02);
+        }
+        label:hover {
+            border-color: #667eea;
+            transform: translateX(-5px);
+        }
+        .buttons {
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .results-btn {
+            background: #28a745;
+            color: white;
+        }
+        .results-btn:hover {
+            background: #218838;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>مرحباً {{ voter_name }}</h2>
+        <div class="stats">
+            <div class="stat">📊 عدد الأصوات: {{ total_votes }}</div>
+            <div class="stat">❓ السؤال الحالي: {{ current_question }}</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>السؤال رقم {{ current_question }}</h1>
+        
+        <form method="POST" action="/submit_vote" id="voteForm">
+            <div class="options">
+                {% for option in options %}
+                <div class="option">
+                    <input type="radio" name="choice" value="{{ option }}" id="option{{ loop.index }}" required>
+                    <label for="option{{ loop.index }}">{{ option }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="buttons">
+                <button type="submit" class="submit-btn">✅ تصويت</button>
+                <a href="/results" style="flex: 1; text-decoration: none;">
+                    <button type="button" class="results-btn" style="width: 100%;">📊 نتائجي</button>
+                </a>
+                <a href="/logout" style="flex: 0.5; text-decoration: none;">
+                    <button type="button" class="logout-btn" style="width: 100%;">🚪 خروج</button>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Auto submit on selection
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                setTimeout(() => {
+                    document.getElementById('voteForm').submit();
+                }, 300);
+            });
+        });
+    </script>
+</body>
+</html>
