@@ -239,6 +239,15 @@ def main():
             key=f"vote_radio_{question_num}"
         )
         
+        # Radio buttons for voting - immediate voting on selection
+        choice = st.radio(
+            "اختر رقم:",
+            options,
+            index=None,
+            label_visibility="collapsed",
+            key=f"vote_radio_{question_num}"
+        )
+        
         # Immediate voting when choice is made
         if choice is not None:
             # Check if this vote was already recorded (to prevent duplicate on rerun)
@@ -256,17 +265,25 @@ def main():
                 votes_data["votes"].append(vote_entry)
                 
                 # Save votes
-                save_votes(votes_data)
-                
-                # Mark this question as saved and increment to next question
-                st.session_state.last_saved_question = question_num
-                st.session_state.current_question = question_num + 1
-                
-                # Show success message
-                st.success(f"✅ تم تسجيل إجابتك للسؤال {question_num}: {choice}")
-                
-                # Rerun to show next question
-                st.rerun()
+                if save_votes(votes_data):
+                    # Mark this question as saved
+                    st.session_state.last_saved_question = question_num
+                    
+                    # Show success message
+                    st.success(f"✅ تم تسجيل إجابتك للسؤال {question_num}: {choice}")
+                    
+                    # Button to go to next question
+                    if st.button("➡️ السؤال التالي", use_container_width=True, type="primary"):
+                        st.session_state.current_question = question_num + 1
+                        st.rerun()
+                else:
+                    st.error("❌ حدث خطأ في حفظ الإجابة، حاول مرة أخرى")
+            else:
+                # Already saved, show button to continue
+                st.info(f"تم حفظ إجابتك: {choice}")
+                if st.button("➡️ السؤال التالي", use_container_width=True, type="primary"):
+                    st.session_state.current_question = question_num + 1
+                    st.rerun()
         
         # Show personal results
         st.markdown("---")
