@@ -97,10 +97,11 @@ def initialize_voting_options():
     if not votes_data["options"]:
         # Default voting options - customize as needed
         votes_data["options"] = {
-            "Option A": 0,
-            "Option B": 0,
-            "Option C": 0,
-            "Option D": 0
+            "رقم 1": 0,
+            "رقم 2": 0,
+            "رقم 3": 0,
+            "رقم 4": 0,
+            "غير صحيح": 0
         }
         votes_data["voters"] = []
         votes_data["total_votes"] = 0
@@ -173,86 +174,82 @@ def main():
     st.title("🗳️ Voting Form")
     
     # Initialize session state
-    if 'voted' not in st.session_state:
-        st.session_state.voted = False
-    if 'voter_id' not in st.session_state:
-        st.session_state.voter_id = None
+    if 'voter_name' not in st.session_state:
+        st.session_state.voter_name = None
+    if 'show_voting' not in st.session_state:
+        st.session_state.show_voting = False
+    if 'vote_count' not in st.session_state:
+        st.session_state.vote_count = 0
     
     # Initialize voting data
     votes_data = initialize_voting_options()
     
-    # Check if user already voted
-    voter_id = st.session_state.voter_id
+    # Step 1: Ask for name first
+    if not st.session_state.voter_name:
+        st.markdown("### أدخل اسمك للبدء:")
+        voter_name = st.text_input("الاسم", max_chars=50, key="name_input")
+        
+        if st.button("متابعة", use_container_width=True):
+            if voter_name and voter_name.strip():
+                st.session_state.voter_name = voter_name.strip()
+                st.session_state.show_voting = True
+                st.rerun()
+            else:
+                st.error("⚠️ من فضلك أدخل اسمك!")
     
-    if st.session_state.voted and voter_id in votes_data.get("voters", []):
-        st.success("✅ Thank you! Your vote has been recorded.")
-        st.info("You have already voted in this poll.")
-        
-        # Show results button
-        if st.button("📊 View Results", use_container_width=True):
-            show_results(votes_data)
+    # Step 2: Show voting options after name is entered
     else:
-        st.markdown("### Please select your choice:")
+        st.success(f"مرحباً {st.session_state.voter_name}! 👋")
+        st.markdown("### اختر خيارك:")
         
-        # Voting form
-        with st.form("voting_form"):
-            # Get voting options
-            options = list(votes_data["options"].keys())
+        # Get voting options
+        options = list(votes_data["options"].keys())
+        
+        # Radio buttons for voting - immediate voting on selection
+        choice = st.radio(
+            "اختر رقم:",
+            options,
+            index=None,
+            label_visibility="collapsed",
+            key=f"vote_radio_{st.session_state.vote_count}"
+        )
+        
+        # Immediate voting when choice is made
+        if choice is not None:
+            # Record vote immediately
+            votes_data = load_votes()
             
-            # Radio buttons for voting
-            choice = st.radio(
-                "Choose one option:",
-                options,
-                index=None,
-                label_visibility="collapsed"
-            )
+            # Record vote
+            if choice in votes_data["options"]:
+                votes_data["options"][choice] += 1
+            else:
+                votes_data["options"][choice] = 1
             
-            # Voter identification (simple approach - can be enhanced)
-            voter_name = st.text_input("Your Name (Optional)", max_chars=50)
+            # Add voter to list with timestamp to allow multiple votes
+            voter_entry = f"{st.session_state.voter_name}_{int(datetime.now().timestamp())}"
+            votes_data["voters"].append(voter_entry)
+            votes_data["total_votes"] = len(votes_data["voters"])
             
-            # Submit button
-            submitted = st.form_submit_button("🗳️ Submit Vote", use_container_width=True)
+            # Save votes
+            save_votes(votes_data)
             
-            if submitted:
-                if choice is None:
-                    st.error("⚠️ Please select an option before submitting!")
-                else:
-                    # Generate voter ID
-                    if not voter_id:
-                        # Use name if provided, otherwise generate anonymous ID
-                        if voter_name and voter_name.strip():
-                            voter_id = voter_name.strip()
-                        else:
-                            voter_id = f"Anonymous_{int(datetime.now().timestamp())}"
-                        st.session_state.voter_id = voter_id
-                    
-                    # Reload votes to get latest data
-                    votes_data = load_votes()
-                    
-                    # Check if already voted
-                    if voter_id not in votes_data["voters"]:
-                        # Record vote
-                        if choice in votes_data["options"]:
-                            votes_data["options"][choice] += 1
-                        else:
-                            # Initialize option if not exists
-                            votes_data["options"][choice] = 1
-                        
-                        votes_data["voters"].append(voter_id)
-                        votes_data["total_votes"] = len(votes_data["voters"])
-                        
-                        # Save synchronized votes
-                        save_votes(votes_data)
-                        
-                        st.session_state.voted = True
-                        st.rerun()
-                    else:
-                        st.error("You have already voted!")
+            # Show success message
+            st.success(f"✅ تم تسجيل صوتك للخيار: {choice}")
+            
+            # Increment vote count to reset radio selection
+            st.session_state.vote_count += 1
+            st.rerun()
         
         # View results option
         st.markdown("---")
-        if st.button("📊 View Current Results", use_container_width=True):
+        if st.button("📊 عرض النتائج", use_container_width=True):
             show_results(votes_data)
+        
+        # Option to change name
+        if st.button("🔄 تغيير الاسم", use_container_width=True):
+            st.session_state.voter_name = None
+            st.session_state.show_voting = False
+            st.rerun()
 
 def show_results(votes_data):
     """Display voting results"""
@@ -286,10 +283,11 @@ def admin_panel():
         if st.sidebar.button("Reset All Votes"):
             votes_data = {
                 "options": {
-                    "Option A": 0,
-                    "Option B": 0,
-                    "Option C": 0,
-                    "Option D": 0
+                    "رقم 1": 0,
+                    "رقم 2": 0,
+                    "رقم 3": 0,
+                    "رقم 4": 0,
+                    "غير صحيح": 0
                 },
                 "voters": [],
                 "total_votes": 0
@@ -298,9 +296,10 @@ def admin_panel():
             st.sidebar.success("Votes reset!")
             st.rerun()
         
-        if st.sidebar.button("Clear My Vote"):
-            st.session_state.voted = False
-            st.session_state.voter_id = None
+        if st.sidebar.button("Clear My Session"):
+            st.session_state.voter_name = None
+            st.session_state.show_voting = False
+            st.session_state.vote_count = 0
             st.rerun()
 
 if __name__ == "__main__":
