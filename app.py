@@ -31,37 +31,23 @@ def load_votes():
     try:
         sheet = get_google_sheet()
         if sheet is None:
-            return {"options": {}, "voters": [], "total_votes": 0}
+            return {"votes": []}
         
         # Get all values
         all_values = sheet.get_all_values()
         
-        if len(all_values) < 2:
-            # Initialize sheet if empty
-            return {"options": {}, "voters": [], "total_votes": 0}
+        if len(all_values) < 1 or not all_values[0][0]:
+            return {"votes": []}
         
-        # Parse the data
-        # Row format: Column A = Option name, Column B = Vote count, Column D = Voters (comma-separated)
-        votes_data = {"options": {}, "voters": [], "total_votes": 0}
-        
-        # Read options from rows 2-5 (indices 1-4)
-        for i in range(1, min(len(all_values), 6)):  # Rows 2-6
-            row = all_values[i]
-            if len(row) >= 2 and row[0]:  # Column D (index 3)
-                option_name = row[0]
-                vote_count = int(row[1]) if row[1] and row[1].isdigit() else 0
-                votes_data["options"][option_name] = vote_count
-        
-        # Read voters from column D, row 2 (all voters in one cell, comma-separated)
-        if len(all_values) > 1 and len(all_values[1]) > 3 and all_values[1][3]:
-            voters_str = all_values[1][3]
-            votes_data["voters"] = [v.strip() for v in voters_str.split(',') if v.strip()]
-        
-        votes_data["total_votes"] = len(votes_data["voters"])
-        return votes_data
+        # Try to parse JSON from cell A1
+        try:
+            votes_data = json.loads(all_values[0][0])
+            return votes_data
+        except:
+            return {"votes": []}
     except Exception as e:
         st.error(f"Error loading votes: {e}")
-        return {"options": {}, "voters": [], "total_votes": 0}
+        return {"votes": []}
 
 def save_votes(votes_data):
     """Save votes to Google Sheets"""
@@ -73,40 +59,19 @@ def save_votes(votes_data):
         # Clear all data
         sheet.clear()
         
-        # Row 1: Headers
-        sheet.update('A1:D1', [['Option', 'Votes', '', 'Voters']])
-        
-        # Rows 2-5: Options and vote counts
-        options_list = list(votes_data["options"].items())
-        for i, (option, count) in enumerate(options_list, start=2):
-            # Put voters list only in the first row (D2)
-            if i == 2:
-                voters_str = ','.join(votes_data["voters"]) if votes_data["voters"] else ''
-                sheet.update(f'A{i}:D{i}', [[option, count, '', voters_str]])
-            else:
-                sheet.update(f'A{i}:B{i}', [[option, count]])
+        # Save as JSON in cell A1
+        json_data = json.dumps(votes_data, ensure_ascii=False)
+        sheet.update('A1', [[json_data]])
         
         return True
     except Exception as e:
         st.error(f"Error saving votes: {e}")
         return False
 
-def initialize_voting_options():
-    """Initialize voting options if not set"""
-    votes_data = load_votes()
-    if not votes_data["options"]:
-        # Default voting options - customize as needed
-        votes_data["options"] = {
-            "رقم 1": 0,
-            "رقم 2": 0,
-            "رقم 3": 0,
-            "رقم 4": 0,
-            "غير صحيح": 0
-        }
-        votes_data["voters"] = []
-        votes_data["total_votes"] = 0
-        save_votes(votes_data)
-    return votes_data
+def get_voter_question_count(votes_data, voter_name):
+    """Get the number of questions a voter has answered"""
+    count = sum(1 for vote in votes_data["votes"] if vote["voter"] == voter_name)
+    return count
 
 # Mobile-friendly page configuration
 st.set_page_config(
@@ -171,18 +136,16 @@ st.markdown("""
 
 # Main app
 def main():
-    st.title("🗳️ Voting Form")
+    st.title("🗳️ نظام التصويت")
     
     # Initialize session state
     if 'voter_name' not in st.session_state:
         st.session_state.voter_name = None
-    if 'show_voting' not in st.session_state:
-        st.session_state.show_voting = False
     if 'vote_count' not in st.session_state:
         st.session_state.vote_count = 0
     
-    # Initialize voting data
-    votes_data = initialize_voting_options()
+    # Load voting data
+    votes_data = load_votes()
     
     # Step 1: Ask for name first
     if not st.session_state.voter_name:
@@ -192,18 +155,21 @@ def main():
         if st.button("متابعة", use_container_width=True):
             if voter_name and voter_name.strip():
                 st.session_state.voter_name = voter_name.strip()
-                st.session_state.show_voting = True
                 st.rerun()
             else:
                 st.error("⚠️ من فضلك أدخل اسمك!")
     
     # Step 2: Show voting options after name is entered
     else:
+        # Get current question number for this voter
+        question_num = get_voter_question_count(votes_data, st.session_state.voter_name) + 1
+        
         st.success(f"مرحباً {st.session_state.voter_name}! 👋")
-        st.markdown("### اختر خيارك:")
+        st.info(f"السؤال رقم {question_num}")
+        st.markdown("### اختر إجابتك:")
         
         # Get voting options
-        options = list(votes_data["options"].keys())
+        options = ["رقم 1", "رقم 2", "رقم 3", "رقم 4", "غير صحيح"]
         
         # Radio buttons for voting - immediate voting on selection
         choice = st.radio(
@@ -219,22 +185,20 @@ def main():
             # Record vote immediately
             votes_data = load_votes()
             
-            # Record vote
-            if choice in votes_data["options"]:
-                votes_data["options"][choice] += 1
-            else:
-                votes_data["options"][choice] = 1
-            
-            # Add voter to list with timestamp to allow multiple votes
-            voter_entry = f"{st.session_state.voter_name}_{int(datetime.now().timestamp())}"
-            votes_data["voters"].append(voter_entry)
-            votes_data["total_votes"] = len(votes_data["voters"])
+            # Add vote to the list
+            vote_entry = {
+                "voter": st.session_state.voter_name,
+                "question": question_num,
+                "choice": choice,
+                "timestamp": datetime.now().isoformat()
+            }
+            votes_data["votes"].append(vote_entry)
             
             # Save votes
             save_votes(votes_data)
             
             # Show success message
-            st.success(f"✅ تم تسجيل صوتك للخيار: {choice}")
+            st.success(f"✅ تم تسجيل إجابتك للسؤال {question_num}: {choice}")
             
             # Increment vote count to reset radio selection
             st.session_state.vote_count += 1
@@ -244,32 +208,51 @@ def main():
         st.markdown("---")
         if st.button("📊 عرض النتائج", use_container_width=True):
             show_results(votes_data)
-        
-        # Option to change name
-        if st.button("🔄 تغيير الاسم", use_container_width=True):
-            st.session_state.voter_name = None
-            st.session_state.show_voting = False
-            st.rerun()
 
 def show_results(votes_data):
     """Display voting results"""
-    st.markdown("### 📊 Current Results")
+    st.markdown("## 📊 النتائج الكاملة")
     
-    total_votes = votes_data["total_votes"]
-    st.info(f"Total Votes: {total_votes}")
+    if not votes_data["votes"]:
+        st.warning("لا توجد أصوات بعد")
+        return
     
-    if total_votes > 0:
-        for option, count in votes_data["options"].items():
-            percentage = (count / total_votes * 100) if total_votes > 0 else 0
-            st.markdown(f"**{option}**")
-            st.progress(percentage / 100)
-            st.markdown(f"{count} votes ({percentage:.1f}%)")
-            st.markdown("")
-    else:
-        st.warning("No votes recorded yet.")
+    # Get all unique question numbers
+    questions = sorted(set(vote["question"] for vote in votes_data["votes"]))
+    
+    for q_num in questions:
+        st.markdown(f"### السؤال رقم {q_num}")
+        
+        # Get all votes for this question
+        question_votes = [v for v in votes_data["votes"] if v["question"] == q_num]
+        total_votes = len(question_votes)
+        
+        st.info(f"إجمالي الأصوات: {total_votes}")
+        
+        # Group by choice
+        options = ["رقم 1", "رقم 2", "رقم 3", "رقم 4", "غير صحيح"]
+        
+        for option in options:
+            option_votes = [v for v in question_votes if v["choice"] == option]
+            count = len(option_votes)
+            
+            if count > 0:
+                percentage = (count / total_votes * 100) if total_votes > 0 else 0
+                
+                st.markdown(f"**{option}**")
+                st.progress(percentage / 100)
+                st.markdown(f"{count} أصوات ({percentage:.1f}%)")
+                
+                # Show voters
+                voters = [v["voter"] for v in option_votes]
+                voters_str = ", ".join(voters)
+                st.markdown(f"🗳️ المصوتون: {voters_str}")
+                st.markdown("")
+        
+        st.markdown("---")
     
     # Refresh button
-    if st.button("🔄 Refresh Results", use_container_width=True):
+    if st.button("🔄 تحديث النتائج", use_container_width=True):
         st.rerun()
 
 # Admin panel (optional)
@@ -281,24 +264,13 @@ def admin_panel():
         st.sidebar.success("Admin access granted")
         
         if st.sidebar.button("Reset All Votes"):
-            votes_data = {
-                "options": {
-                    "رقم 1": 0,
-                    "رقم 2": 0,
-                    "رقم 3": 0,
-                    "رقم 4": 0,
-                    "غير صحيح": 0
-                },
-                "voters": [],
-                "total_votes": 0
-            }
+            votes_data = {"votes": []}
             save_votes(votes_data)
             st.sidebar.success("Votes reset!")
             st.rerun()
         
         if st.sidebar.button("Clear My Session"):
             st.session_state.voter_name = None
-            st.session_state.show_voting = False
             st.session_state.vote_count = 0
             st.rerun()
 
