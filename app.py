@@ -188,11 +188,15 @@ def main():
     # Initialize session state
     if 'voter_name' not in st.session_state:
         st.session_state.voter_name = None
-    if 'vote_count' not in st.session_state:
-        st.session_state.vote_count = 0
+    if 'current_question' not in st.session_state:
+        st.session_state.current_question = 1
+    if 'last_saved_question' not in st.session_state:
+        st.session_state.last_saved_question = 0
     
-    # Load voting data
-    votes_data = load_votes()
+    # Load voting data only once at the beginning
+    if 'votes_loaded' not in st.session_state:
+        votes_data = load_votes()
+        st.session_state.votes_loaded = True
     
     # Step 1: Ask for name first
     if not st.session_state.voter_name:
@@ -202,21 +206,17 @@ def main():
         if st.button("متابعة", use_container_width=True):
             if voter_name and voter_name.strip():
                 st.session_state.voter_name = voter_name.strip()
+                # Load existing votes for this voter to set correct question number
+                votes_data = load_votes()
+                existing_count = get_voter_question_count(votes_data, voter_name.strip())
+                st.session_state.current_question = existing_count + 1
                 st.rerun()
             else:
                 st.error("⚠️ من فضلك أدخل اسمك!")
     
     # Step 2: Show voting options after name is entered
     else:
-        # Get current question number for this voter
-        question_num = get_voter_question_count(votes_data, st.session_state.voter_name) + 1
-        
-        # Clean up old vote keys to prevent session state bloat
-        # Keep only the last 10 vote keys
-        if question_num > 10:
-            old_vote_key = f"vote_{st.session_state.voter_name}_{question_num - 10}"
-            if old_vote_key in st.session_state:
-                del st.session_state[old_vote_key]
+        question_num = st.session_state.current_question
         
         st.success(f"مرحباً {st.session_state.voter_name}! 👋")
         st.info(f"السؤال رقم {question_num}")
@@ -242,8 +242,7 @@ def main():
         # Immediate voting when choice is made
         if choice is not None:
             # Check if this vote was already recorded (to prevent duplicate on rerun)
-            vote_key = f"vote_{st.session_state.voter_name}_{question_num}"
-            if vote_key not in st.session_state:
+            if st.session_state.last_saved_question != question_num:
                 # Record vote immediately
                 votes_data = load_votes()
                 
@@ -259,21 +258,21 @@ def main():
                 # Save votes
                 save_votes(votes_data)
                 
-                # Mark this vote as recorded
-                st.session_state[vote_key] = True
+                # Mark this question as saved and increment to next question
+                st.session_state.last_saved_question = question_num
+                st.session_state.current_question = question_num + 1
                 
                 # Show success message
                 st.success(f"✅ تم تسجيل إجابتك للسؤال {question_num}: {choice}")
                 
-                # Rerun to show next question without delay
-                st.rerun()
-            else:
-                # Vote already recorded, just show next question
+                # Rerun to show next question
                 st.rerun()
         
         # Show personal results
         st.markdown("---")
-        show_personal_results(votes_data, st.session_state.voter_name)
+        # Only reload votes when showing results
+        current_votes_data = load_votes()
+        show_personal_results(current_votes_data, st.session_state.voter_name)
 
 def show_all_results(votes_data):
     """Display all voting results - Admin only"""
