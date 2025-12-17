@@ -211,6 +211,13 @@ def main():
         # Get current question number for this voter
         question_num = get_voter_question_count(votes_data, st.session_state.voter_name) + 1
         
+        # Clean up old vote keys to prevent session state bloat
+        # Keep only the last 10 vote keys
+        if question_num > 10:
+            old_vote_key = f"vote_{st.session_state.voter_name}_{question_num - 10}"
+            if old_vote_key in st.session_state:
+                del st.session_state[old_vote_key]
+        
         st.success(f"مرحباً {st.session_state.voter_name}! 👋")
         st.info(f"السؤال رقم {question_num}")
         st.markdown("### اختر إجابتك:")
@@ -258,9 +265,7 @@ def main():
                 # Show success message
                 st.success(f"✅ تم تسجيل إجابتك للسؤال {question_num}: {choice}")
                 
-                # Wait a moment then rerun to show next question
-                import time
-                time.sleep(0.5)
+                # Rerun to show next question without delay
                 st.rerun()
             else:
                 # Vote already recorded, just show next question
