@@ -88,20 +88,25 @@ def on_vote_change():
         
         # Check if this vote was already recorded
         if st.session_state.last_saved_question != question_num:
-            # Load votes
-            votes_data = load_votes()
+            # Store vote in pending list (batch mode)
+            if 'pending_votes' not in st.session_state:
+                st.session_state.pending_votes = []
             
-            # Add vote to the list
             vote_entry = {
                 "voter": st.session_state.voter_name,
                 "question": question_num,
                 "choice": choice,
                 "timestamp": datetime.now().isoformat()
             }
-            votes_data["votes"].append(vote_entry)
+            st.session_state.pending_votes.append(vote_entry)
             
-            # Save votes
-            save_votes(votes_data)
+            # Save every 5 votes or immediately for now (you can change to 10)
+            if len(st.session_state.pending_votes) >= 5 or question_num % 10 == 0:
+                # Load votes and append all pending
+                votes_data = load_votes()
+                votes_data["votes"].extend(st.session_state.pending_votes)
+                save_votes(votes_data)
+                st.session_state.pending_votes = []
             
             # Mark as saved and move to next question
             st.session_state.last_saved_question = question_num
@@ -112,18 +117,26 @@ def show_personal_results(votes_data, voter_name):
     """Display personal voting results for a specific voter"""
     st.markdown("## 📋 نتائجك الشخصية")
     
-    # Get all votes for this voter
-    personal_votes = [v for v in votes_data["votes"] if v["voter"] == voter_name]
+    # Get all votes for this voter (including pending)
+    saved_votes = [v for v in votes_data["votes"] if v["voter"] == voter_name]
     
-    if not personal_votes:
+    # Add pending votes if any
+    pending = []
+    if 'pending_votes' in st.session_state:
+        pending = st.session_state.pending_votes
+    
+    total_votes = len(saved_votes) + len(pending)
+    
+    if total_votes == 0:
         st.info("لم تقم بالتصويت بعد")
         return
     
-    st.info(f"إجمالي الأسئلة: {len(personal_votes)} سؤال")
+    st.info(f"إجمالي الأسئلة: {total_votes} سؤال")
     
-    # Count votes per choice
+    # Count votes per choice (saved + pending)
+    all_votes = saved_votes + pending
     choice_counts = {}
-    for vote in personal_votes:
+    for vote in all_votes:
         choice = vote["choice"]
         choice_counts[choice] = choice_counts.get(choice, 0) + 1
     
@@ -242,6 +255,7 @@ def main():
                 votes_data = load_votes()
                 existing_count = get_voter_question_count(votes_data, voter_name.strip())
                 st.session_state.current_question = existing_count + 1
+                st.session_state.pending_votes = []  # Initialize pending votes
                 st.rerun()
             else:
                 st.error("⚠️ من فضلك أدخل اسمك!")
@@ -274,18 +288,18 @@ def main():
         
         # Show success message if vote was just saved
         if st.session_state.last_saved_question == question_num - 1:
-            # Get the last vote for this user
-            votes_data = load_votes()
-            user_votes = [v for v in votes_data["votes"] if v["voter"] == st.session_state.voter_name]
-            if user_votes:
-                last_vote = user_votes[-1]
-                st.success(f"✅ تم تسجيل إجابتك للسؤال {last_vote['question']}: {last_vote['choice']}")
+            st.success(f"✅ تم تسجيل السؤال {question_num - 1}")
+        
+        # Show pending votes count
+        if 'pending_votes' in st.session_state and len(st.session_state.pending_votes) > 0:
+            st.info(f"📝 في انتظار الحفظ: {len(st.session_state.pending_votes)} أسئلة")
         
         # Show personal results
         st.markdown("---")
-        # Only reload votes when showing results
-        current_votes_data = load_votes()
-        show_personal_results(current_votes_data, st.session_state.voter_name)
+        # Only reload votes when showing results - use cached data
+        if 'cached_votes' not in st.session_state or question_num % 10 == 1:
+            st.session_state.cached_votes = load_votes()
+        show_personal_results(st.session_state.cached_votes, st.session_state.voter_name)
 
 def show_all_results(votes_data):
     """Display all voting results - Admin only"""
