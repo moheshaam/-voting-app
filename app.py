@@ -1,81 +1,53 @@
 import streamlit as st
 from datetime import datetime
-import gspread
-from google.oauth2.service_account import Credentials
-import json
+from supabase import create_client, Client
 
-# Google Sheets configuration
-SCOPES = [
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive'
-]
+# Supabase configuration
+SUPABASE_URL = "https://gsastznmljkrimykccom.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzYXN0em5tbGprcmlteWtjY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5OTkyOTYsImV4cCI6MjA4MTU3NTI5Nn0.KxcwthJhLFJGEY97-hMFGv8dkh6N92whJFzHn0h6Rd0"
 
 @st.cache_resource
-def get_google_sheet():
-    """Connect to Google Sheets using credentials from Streamlit secrets"""
-    try:
-        # Get credentials from Streamlit secrets
-        credentials_dict = st.secrets["gcp_service_account"]
-        credentials = Credentials.from_service_account_info(credentials_dict, scopes=SCOPES)
-        client = gspread.authorize(credentials)
-        
-        # Open the spreadsheet (you'll need to create this and share it with the service account)
-        sheet = client.open("Voting_App_Data").sheet1
-        return sheet
-    except Exception as e:
-        st.error(f"Error connecting to Google Sheets: {e}")
-        return None
+def get_supabase_client() -> Client:
+    """Get Supabase client"""
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def load_votes():
-    """Load votes from Google Sheets"""
+    """Load votes from Supabase"""
     try:
-        sheet = get_google_sheet()
-        if sheet is None:
-            return {"votes": []}
-        
-        # Get all values
-        all_values = sheet.get_all_values()
-        
-        if not all_values or len(all_values) == 0:
-            return {"votes": []}
-        
-        if len(all_values[0]) == 0 or not all_values[0][0]:
-            return {"votes": []}
-        
-        # Try to parse JSON from cell A1
-        try:
-            votes_data = json.loads(all_values[0][0])
-            if "votes" not in votes_data:
-                return {"votes": []}
-            return votes_data
-        except:
-            return {"votes": []}
+        supabase = get_supabase_client()
+        response = supabase.table('votes').select('*').execute()
+        return response.data if response.data else []
     except Exception as e:
-        # Don't show error to user, just return empty data
-        return {"votes": []}
+        # Return empty list on error
+        return []
 
-def save_votes(votes_data):
-    """Save votes to Google Sheets"""
+def save_vote(voter_name, question_num, choice):
+    """Save a single vote to Supabase"""
     try:
-        sheet = get_google_sheet()
-        if sheet is None:
-            return False
-        
-        # Clear all data
-        sheet.clear()
-        
-        # Save as JSON in cell A1
-        json_data = json.dumps(votes_data, ensure_ascii=False)
-        sheet.update('A1', [[json_data]])
-        
+        supabase = get_supabase_client()
+        vote_entry = {
+            "voter": voter_name,
+            "question": question_num,
+            "choice": choice,
+            "timestamp": datetime.now().isoformat()
+        }
+        supabase.table('votes').insert(vote_entry).execute()
         return True
     except Exception as e:
-        st.error(f"Error saving votes: {e}")
+        return False
+
+def save_votes_batch(votes_list):
+    """Save multiple votes to Supabase at once"""
+    try:
+        supabase = get_supabase_client()
+        supabase.table('votes').insert(votes_list).execute()
+        return True
+    except Exception as e:
         return False
 
 def get_voter_question_count(votes_data, voter_name):
     """Get the number of questions a voter has answered"""
-    count = sum(1 for vote in votes_data["votes"] if vote["voter"] == voter_name)
+    count = sum(1 for vote in votes_data if vote.get("voter") == voter_name)
     return count
 
 def on_vote_change():
@@ -100,13 +72,14 @@ def on_vote_change():
             }
             st.session_state.pending_votes.append(vote_entry)
             
-            # Save every 5 votes or immediately for now (you can change to 10)
-            if len(st.session_state.pending_votes) >= 5 or question_num % 10 == 0:
-                # Load votes and append all pending
-                votes_data = load_votes()
-                votes_data["votes"].extend(st.session_state.pending_votes)
-                save_votes(votes_data)
+            # Save every 5 votes or immediately
+            if len(st.session_state.pending_votes) >= 5:
+                # Save batch
+                save_votes_batch(st.session_state.pending_votes)
                 st.session_state.pending_votes = []
+            else:
+                # Save immediately for responsiveness
+                save_vote(st.session_state.voter_name, question_num, choice)
             
             # Mark as saved and move to next question
             st.session_state.last_saved_question = question_num
@@ -118,7 +91,7 @@ def show_personal_results(votes_data, voter_name):
     st.markdown("## 📋 نتائجك الشخصية")
     
     # Get all votes for this voter (including pending)
-    saved_votes = [v for v in votes_data["votes"] if v["voter"] == voter_name]
+    saved_votes = [v for v in votes_data if v.get("voter") == voter_name]
     
     # Add pending votes if any
     pending = []
@@ -137,8 +110,9 @@ def show_personal_results(votes_data, voter_name):
     all_votes = saved_votes + pending
     choice_counts = {}
     for vote in all_votes:
-        choice = vote["choice"]
-        choice_counts[choice] = choice_counts.get(choice, 0) + 1
+        choice = vote.get("choice")
+        if choice:
+            choice_counts[choice] = choice_counts.get(choice, 0) + 1
     
     # Display summary
     st.markdown("### ملخص اختياراتك:")
@@ -305,18 +279,18 @@ def show_all_results(votes_data):
     """Display all voting results - Admin only"""
     st.markdown("## 📊 النتائج الكاملة (للجميع)")
     
-    if not votes_data["votes"]:
+    if not votes_data:
         st.warning("لا توجد أصوات بعد")
         return
     
     # Get all unique question numbers
-    questions = sorted(set(vote["question"] for vote in votes_data["votes"]))
+    questions = sorted(set(vote.get("question", 0) for vote in votes_data if vote.get("question")))
     
     for q_num in questions:
         st.markdown(f"### السؤال رقم {q_num}")
         
         # Get all votes for this question
-        question_votes = [v for v in votes_data["votes"] if v["question"] == q_num]
+        question_votes = [v for v in votes_data if v.get("question") == q_num]
         total_votes = len(question_votes)
         
         st.info(f"إجمالي الأصوات: {total_votes}")
@@ -330,7 +304,7 @@ def show_all_results(votes_data):
         ]
         
         for option in options:
-            option_votes = [v for v in question_votes if v["choice"] == option]
+            option_votes = [v for v in question_votes if v.get("choice") == option]
             count = len(option_votes)
             
             if count > 0:
@@ -341,7 +315,7 @@ def show_all_results(votes_data):
                 st.markdown(f"{count} أصوات ({percentage:.1f}%)")
                 
                 # Show voters
-                voters = [v["voter"] for v in option_votes]
+                voters = [v.get("voter") for v in option_votes if v.get("voter")]
                 voters_str = ", ".join(voters)
                 st.markdown(f"🗳️ المصوتون: {voters_str}")
                 st.markdown("")
@@ -368,14 +342,21 @@ def admin_panel():
         st.sidebar.markdown("---")
         
         if st.sidebar.button("Reset All Votes"):
-            votes_data = {"votes": []}
-            save_votes(votes_data)
-            st.sidebar.success("Votes reset!")
-            st.rerun()
+            try:
+                supabase = get_supabase_client()
+                # Delete all votes
+                supabase.table('votes').delete().neq('id', 0).execute()
+                st.sidebar.success("Votes reset!")
+                st.rerun()
+            except:
+                st.sidebar.error("Error resetting votes")
         
         if st.sidebar.button("Clear My Session"):
             st.session_state.voter_name = None
-            st.session_state.vote_count = 0
+            st.session_state.current_question = 1
+            st.session_state.widget_key = 0
+            if 'pending_votes' in st.session_state:
+                st.session_state.pending_votes = []
             st.rerun()
 
 if __name__ == "__main__":
