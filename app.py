@@ -73,6 +73,33 @@ def get_voter_question_count(votes_data, voter_name):
     count = sum(1 for vote in votes_data["votes"] if vote["voter"] == voter_name)
     return count
 
+def show_personal_results(votes_data, voter_name):
+    """Display personal voting results for a specific voter"""
+    st.markdown("## 📋 نتائجك الشخصية")
+    
+    # Get all votes for this voter
+    personal_votes = [v for v in votes_data["votes"] if v["voter"] == voter_name]
+    
+    if not personal_votes:
+        st.info("لم تقم بالتصويت بعد")
+        return
+    
+    st.info(f"عدد الأسئلة التي أجبت عليها: {len(personal_votes)}")
+    
+    # Sort by question number
+    personal_votes.sort(key=lambda x: x["question"])
+    
+    # Display in a table format
+    st.markdown("---")
+    for vote in personal_votes:
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.markdown(f"**السؤال {vote['question']}**")
+        with col2:
+            st.markdown(f"✅ **{vote['choice']}**")
+    
+    st.markdown("---")
+
 # Mobile-friendly page configuration
 st.set_page_config(
     page_title="Voting App",
@@ -204,14 +231,13 @@ def main():
             st.session_state.vote_count += 1
             st.rerun()
         
-        # View results option
+        # Show personal results
         st.markdown("---")
-        if st.button("📊 عرض النتائج", use_container_width=True):
-            show_results(votes_data)
+        show_personal_results(votes_data, st.session_state.voter_name)
 
-def show_results(votes_data):
-    """Display voting results"""
-    st.markdown("## 📊 النتائج الكاملة")
+def show_all_results(votes_data):
+    """Display all voting results - Admin only"""
+    st.markdown("## 📊 النتائج الكاملة (للجميع)")
     
     if not votes_data["votes"]:
         st.warning("لا توجد أصوات بعد")
@@ -262,6 +288,13 @@ def admin_panel():
     
     if password == "admin123":  # Change this password!
         st.sidebar.success("Admin access granted")
+        
+        # Show all results button
+        if st.sidebar.button("📊 عرض نتائج الجميع"):
+            votes_data = load_votes()
+            show_all_results(votes_data)
+        
+        st.sidebar.markdown("---")
         
         if st.sidebar.button("Reset All Votes"):
             votes_data = {"votes": []}
