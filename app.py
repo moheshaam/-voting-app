@@ -229,32 +229,42 @@ def main():
             options,
             index=None,
             label_visibility="collapsed",
-            key=f"vote_radio_{st.session_state.vote_count}"
+            key=f"vote_radio_{question_num}"
         )
         
         # Immediate voting when choice is made
         if choice is not None:
-            # Record vote immediately
-            votes_data = load_votes()
-            
-            # Add vote to the list
-            vote_entry = {
-                "voter": st.session_state.voter_name,
-                "question": question_num,
-                "choice": choice,
-                "timestamp": datetime.now().isoformat()
-            }
-            votes_data["votes"].append(vote_entry)
-            
-            # Save votes
-            save_votes(votes_data)
-            
-            # Show success message
-            st.success(f"✅ تم تسجيل إجابتك للسؤال {question_num}: {choice}")
-            
-            # Increment vote count to reset radio selection
-            st.session_state.vote_count += 1
-            st.rerun()
+            # Check if this vote was already recorded (to prevent duplicate on rerun)
+            vote_key = f"vote_{st.session_state.voter_name}_{question_num}"
+            if vote_key not in st.session_state:
+                # Record vote immediately
+                votes_data = load_votes()
+                
+                # Add vote to the list
+                vote_entry = {
+                    "voter": st.session_state.voter_name,
+                    "question": question_num,
+                    "choice": choice,
+                    "timestamp": datetime.now().isoformat()
+                }
+                votes_data["votes"].append(vote_entry)
+                
+                # Save votes
+                save_votes(votes_data)
+                
+                # Mark this vote as recorded
+                st.session_state[vote_key] = True
+                
+                # Show success message
+                st.success(f"✅ تم تسجيل إجابتك للسؤال {question_num}: {choice}")
+                
+                # Wait a moment then rerun to show next question
+                import time
+                time.sleep(0.5)
+                st.rerun()
+            else:
+                # Vote already recorded, just show next question
+                st.rerun()
         
         # Show personal results
         st.markdown("---")
